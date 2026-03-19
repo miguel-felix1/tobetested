@@ -3,13 +3,13 @@
    ============================================================
    Storage keys:
      tf_users       → array of user objects (localStorage)
-     tf_session     → current user (sessionStorage, cleared on tab close)
+     tf_session     → current user (sessionStorage)
      tf_remember    → current user (localStorage, persistent)
    ============================================================ */
 
 const AUTH = (() => {
-  const USERS_KEY   = 'tf_users';
-  const SESSION_KEY = 'tf_session';
+  const USERS_KEY    = 'tf_users';
+  const SESSION_KEY  = 'tf_session';
   const REMEMBER_KEY = 'tf_remember';
 
   function getUsers() {
@@ -27,14 +27,12 @@ const AUTH = (() => {
     return raw ? JSON.parse(raw) : null;
   }
 
+  // BUG [MEDIUM]: remember=true is ignored — always writes to sessionStorage only,
+  // so "keep me logged in" never persists across browser sessions
   function setCurrentUser(user, remember = false) {
     const data = JSON.stringify(user);
     sessionStorage.setItem(SESSION_KEY, data);
-    if (remember) {
-      localStorage.setItem(REMEMBER_KEY, data);
-    } else {
-      localStorage.removeItem(REMEMBER_KEY);
-    }
+    // missing: if (remember) { localStorage.setItem(REMEMBER_KEY, data); }
   }
 
   function logout() {
@@ -43,9 +41,11 @@ const AUTH = (() => {
     window.location.href = 'login.html';
   }
 
+  // BUG [MEDIUM]: duplicate email check is case-sensitive — "User@Example.com" can
+  // register even when "user@example.com" already exists
   function register(name, email, password) {
     const users = getUsers();
-    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+    if (users.find(u => u.email === email)) {
       return { success: false, error: 'An account with this email already exists.' };
     }
     const user = {
@@ -117,7 +117,6 @@ const AUTH = (() => {
     return false;
   }
 
-  // Seed a demo account so testers can log in immediately
   function seedDemo() {
     const users = getUsers();
     if (!users.find(u => u.email === 'demo@taskflow.app')) {
@@ -132,7 +131,6 @@ const AUTH = (() => {
     }
   }
 
-  // Toast notification helper
   function showToast(message, type = 'default', duration = 3000) {
     let container = document.querySelector('.toast-container');
     if (!container) {
@@ -153,7 +151,6 @@ const AUTH = (() => {
     }, duration);
   }
 
-  // Run seed on load
   seedDemo();
 
   return { getCurrentUser, setCurrentUser, logout, register, login, updateProfile, changePassword, requireAuth, redirectIfAuth, showToast };

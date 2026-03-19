@@ -112,6 +112,23 @@
         <div class="card" data-testid="tasks-card">
           <div class="card-header flex justify-between items-center" style="padding-bottom:.75rem;">
             <h3 style="font-size:1rem;margin:0;">My Tasks</h3>
+            <!-- Search bar -->
+            <div style="display:flex;align-items:center;gap:.5rem;position:relative;">
+              <input
+                class="form-input"
+                type="search"
+                placeholder="Search tasks…"
+                data-testid="task-search"
+                style="padding:.4rem .75rem;font-size:.875rem;width:200px;"
+                autocomplete="off"
+              />
+              <button
+                class="btn btn-ghost btn-sm"
+                data-testid="clear-search"
+                type="button"
+                style="padding:.4rem .625rem;font-size:.8rem;"
+              >Clear</button>
+            </div>
           </div>
           <div style="padding:.75rem 1.75rem 0;">
             <!-- Filter tabs -->

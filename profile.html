@@ -193,21 +193,21 @@
   <script src="auth.js"></script>
   <script src="app.js"></script>
   <script>
-    if (!AUTH.requireAuth()) { /* redirected */ }
+    // BUG [CRITICAL]: requireAuth() call removed — page is accessible without login
+    const user = AUTH.getCurrentUser() || {};
 
-    const user = AUTH.getCurrentUser();
-
-    // Populate sidebar + header
-    document.querySelectorAll('[data-user-name]').forEach(el => { el.textContent = user.name; });
-    document.querySelectorAll('[data-user-email]').forEach(el => { el.textContent = user.email; });
-    document.querySelectorAll('[data-user-avatar]').forEach(el => { el.textContent = user.name[0].toUpperCase(); });
+    // BUG [MEDIUM]: querySelector only updates the FIRST matching element,
+    // so the sidebar name and the page header name get out of sync after a profile update
+    document.querySelector('[data-user-name]').textContent  = user.name  || '';
+    document.querySelector('[data-user-email]').textContent = user.email || '';
+    document.querySelector('[data-user-avatar]') && (document.querySelector('[data-user-avatar]').textContent = (user.name || '?')[0].toUpperCase());
 
     // Account info card
-    document.querySelector('[data-testid="profile-display-name"]').textContent = user.name;
-    document.querySelector('[data-testid="profile-display-email"]').textContent = user.email;
+    document.querySelector('[data-testid="profile-display-name"]').textContent = user.name  || '(not logged in)';
+    document.querySelector('[data-testid="profile-display-email"]').textContent = user.email || '';
 
     const largeAvatar = document.querySelector('[data-user-avatar-lg]');
-    if (largeAvatar) largeAvatar.textContent = user.name[0].toUpperCase();
+    if (largeAvatar) largeAvatar.textContent = user.name ? user.name[0].toUpperCase() : '?';
 
     const joinedDate = new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     document.querySelector('[data-testid="profile-member-since"]').textContent = joinedDate;
@@ -276,10 +276,9 @@
       setTimeout(() => {
         const result = AUTH.updateProfile(user.id, { name, email });
         if (result.success) {
-          // Update displayed values
-          document.querySelectorAll('[data-user-name]').forEach(el => { el.textContent = name; });
-          document.querySelectorAll('[data-user-email]').forEach(el => { el.textContent = email; });
-          document.querySelectorAll('[data-user-avatar]').forEach(el => { el.textContent = name[0].toUpperCase(); });
+          // BUG [MEDIUM]: only the first [data-user-name] element is updated (sidebar stays stale)
+          document.querySelector('[data-user-name]').textContent  = name;
+          document.querySelector('[data-user-email]').textContent = email;
           document.querySelector('[data-testid="profile-display-name"]').textContent = name;
           document.querySelector('[data-testid="profile-display-email"]').textContent = email;
           if (largeAvatar) largeAvatar.textContent = name[0].toUpperCase();

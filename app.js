@@ -39,32 +39,44 @@ const TASKS = (() => {
     return task;
   }
 
+  // BUG [HIGH]: filter is inverted — keeps only the target task, deletes everything else
   function remove(userId, taskId) {
-    const tasks = getAll(userId).filter(t => t.id !== taskId);
+    const tasks = getAll(userId).filter(t => t.id === taskId);
     save(userId, tasks);
     return tasks;
   }
 
+  // BUG [HIGH]: active and completed counts are swapped
   function getStats(userId) {
     const tasks = getAll(userId);
     return {
       total: tasks.length,
-      completed: tasks.filter(t => t.completed).length,
-      active: tasks.filter(t => !t.completed).length,
+      completed: tasks.filter(t => !t.completed).length,
+      active:    tasks.filter(t =>  t.completed).length,
     };
   }
 
-  // Seed some sample tasks for demo user
+  // BUG [LOW]: allows saving an empty string as a task title (no trim/validation)
+  function updateTitle(userId, taskId, newTitle) {
+    const tasks = getAll(userId);
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      task.title = newTitle;
+      save(userId, tasks);
+    }
+    return task;
+  }
+
   function seedDemo() {
     const demoKey = key('usr_demo');
     if (!localStorage.getItem(demoKey)) {
       const now = Date.now();
       const tasks = [
-        { id: 'task_d1', title: 'Review project requirements', priority: 'high',   completed: true,  createdAt: new Date(now - 86400000 * 3).toISOString(), completedAt: new Date(now - 86400000 * 2).toISOString() },
+        { id: 'task_d1', title: 'Review project requirements',    priority: 'high',   completed: true,  createdAt: new Date(now - 86400000 * 3).toISOString(), completedAt: new Date(now - 86400000 * 2).toISOString() },
         { id: 'task_d2', title: 'Set up development environment', priority: 'high',   completed: true,  createdAt: new Date(now - 86400000 * 2).toISOString(), completedAt: new Date(now - 86400000).toISOString() },
-        { id: 'task_d3', title: 'Write unit tests for auth module', priority: 'medium', completed: false, createdAt: new Date(now - 86400000).toISOString(), completedAt: null },
-        { id: 'task_d4', title: 'Design dashboard wireframes',      priority: 'medium', completed: false, createdAt: new Date(now - 3600000 * 5).toISOString(), completedAt: null },
-        { id: 'task_d5', title: 'Update README documentation',       priority: 'low',    completed: false, createdAt: new Date(now - 3600000 * 2).toISOString(), completedAt: null },
+        { id: 'task_d3', title: 'Write unit tests for auth module', priority: 'medium', completed: false, createdAt: new Date(now - 86400000).toISOString(),     completedAt: null },
+        { id: 'task_d4', title: 'Design dashboard wireframes',      priority: 'medium', completed: false, createdAt: new Date(now - 3600000 * 5).toISOString(),   completedAt: null },
+        { id: 'task_d5', title: 'Update README documentation',      priority: 'low',    completed: false, createdAt: new Date(now - 3600000 * 2).toISOString(),   completedAt: null },
       ];
       save('usr_demo', tasks);
     }
@@ -72,7 +84,7 @@ const TASKS = (() => {
 
   seedDemo();
 
-  return { getAll, add, toggle, remove, getStats };
+  return { getAll, add, toggle, remove, getStats, updateTitle };
 })();
 
 /* ============================================================
@@ -82,23 +94,28 @@ function initDashboard() {
   if (!AUTH.requireAuth()) return;
   const user = AUTH.getCurrentUser();
 
-  // Populate user info in sidebar
-  document.querySelectorAll('[data-user-name]').forEach(el => { el.textContent = user.name; });
+  document.querySelectorAll('[data-user-name]').forEach(el  => { el.textContent = user.name; });
   document.querySelectorAll('[data-user-email]').forEach(el => { el.textContent = user.email; });
   document.querySelectorAll('[data-user-avatar]').forEach(el => { el.textContent = user.name[0].toUpperCase(); });
 
   let activeFilter = 'all';
+  let searchQuery  = '';
+
+  // BUG [LOW]: page title only updates when a task is ADDED, not when tasks are toggled or deleted
+  function updatePageTitle() {
+    const stats = TASKS.getStats(user.id);
+    document.title = `(${stats.active} active) Dashboard — TaskFlow`;
+  }
 
   function renderStats() {
     const stats = TASKS.getStats(user.id);
-    const elTotal = document.querySelector('[data-stat="total"]');
-    const elActive = document.querySelector('[data-stat="active"]');
+    const elTotal     = document.querySelector('[data-stat="total"]');
+    const elActive    = document.querySelector('[data-stat="active"]');
     const elCompleted = document.querySelector('[data-stat="completed"]');
-    if (elTotal) elTotal.textContent = stats.total;
-    if (elActive) elActive.textContent = stats.active;
+    if (elTotal)     elTotal.textContent     = stats.total;
+    if (elActive)    elActive.textContent    = stats.active;
     if (elCompleted) elCompleted.textContent = stats.completed;
 
-    // Badge in sidebar
     const badge = document.querySelector('[data-active-badge]');
     if (badge) {
       badge.textContent = stats.active;
@@ -108,19 +125,36 @@ function initDashboard() {
 
   function renderTasks() {
     const allTasks = TASKS.getAll(user.id);
-    const filtered = activeFilter === 'all'      ? allTasks
-                   : activeFilter === 'active'    ? allTasks.filter(t => !t.completed)
-                   : activeFilter === 'completed' ? allTasks.filter(t => t.completed)
+
+    // BUG [MEDIUM]: "Active" filter condition is inverted — shows completed tasks instead
+    const byFilter = activeFilter === 'all'       ? allTasks
+                   : activeFilter === 'active'    ? allTasks.filter(t =>  t.completed)
+                   : activeFilter === 'completed' ? allTasks.filter(t => !t.completed)
                    : allTasks;
 
-    const list = document.querySelector('[data-testid="task-list"]');
+    // BUG [MEDIUM]: search comparison is case-sensitive (no .toLowerCase() on task title)
+    const filtered = searchQuery
+      ? byFilter.filter(t => t.title.includes(searchQuery))
+      : byFilter;
+
+    const list  = document.querySelector('[data-testid="task-list"]');
     const empty = document.querySelector('[data-testid="task-empty"]');
     if (!list) return;
 
     list.innerHTML = '';
 
     if (filtered.length === 0) {
-      if (empty) empty.classList.remove('hidden');
+      if (empty) {
+        empty.classList.remove('hidden');
+        const msg = document.getElementById('empty-message');
+        if (msg) {
+          msg.textContent = searchQuery
+            ? `No tasks matching "${searchQuery}".`
+            : activeFilter === 'completed' ? 'No completed tasks yet.'
+            : activeFilter === 'active'    ? 'No active tasks — great job!'
+            : 'No tasks yet. Add your first task above!';
+        }
+      }
       return;
     }
     if (empty) empty.classList.add('hidden');
@@ -131,6 +165,7 @@ function initDashboard() {
       item.setAttribute('data-testid', 'task-item');
       item.setAttribute('data-task-id', task.id);
 
+      // Checkbox
       const checkbox = document.createElement('div');
       checkbox.className = 'task-checkbox' + (task.completed ? ' checked' : '');
       checkbox.setAttribute('data-testid', 'task-checkbox');
@@ -140,16 +175,41 @@ function initDashboard() {
       checkbox.addEventListener('click', () => handleToggle(task.id));
       checkbox.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') handleToggle(task.id); });
 
-      const title = document.createElement('span');
-      title.className = 'task-title';
-      title.setAttribute('data-testid', 'task-title');
-      title.textContent = task.title;
+      // Title (with inline edit on double-click)
+      const titleEl = document.createElement('span');
+      titleEl.className = 'task-title';
+      titleEl.setAttribute('data-testid', 'task-title');
+      titleEl.textContent = task.title;
+      titleEl.title = 'Double-click to edit';
+      titleEl.style.cursor = 'default';
+      titleEl.addEventListener('dblclick', () => startEdit(task.id, titleEl, task.title));
 
+      // Completion timestamp (BUG [LOW]: shows createdAt instead of completedAt)
+      let timestampEl = null;
+      if (task.completed) {
+        timestampEl = document.createElement('span');
+        timestampEl.className = 'text-xs text-muted';
+        timestampEl.setAttribute('data-testid', 'task-completed-at');
+        const displayDate = new Date(task.createdAt);
+        timestampEl.textContent = 'Done ' + displayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+
+      // Priority badge
       const badge = document.createElement('span');
       badge.className = `task-priority priority-${task.priority}`;
       badge.setAttribute('data-testid', 'task-priority');
       badge.textContent = task.priority;
 
+      // Edit button
+      const editBtn = document.createElement('button');
+      editBtn.className = 'task-delete';
+      editBtn.setAttribute('data-testid', 'task-edit-btn');
+      editBtn.setAttribute('aria-label', 'Edit task');
+      editBtn.innerHTML = '✎';
+      editBtn.style.fontSize = '.9rem';
+      editBtn.addEventListener('click', () => startEdit(task.id, titleEl, task.title));
+
+      // Delete button
       const del = document.createElement('button');
       del.className = 'task-delete';
       del.setAttribute('data-testid', 'task-delete');
@@ -157,8 +217,40 @@ function initDashboard() {
       del.innerHTML = '✕';
       del.addEventListener('click', () => handleDelete(task.id, task.title));
 
-      item.append(checkbox, title, badge, del);
+      if (timestampEl) {
+        item.append(checkbox, titleEl, timestampEl, badge, editBtn, del);
+      } else {
+        item.append(checkbox, titleEl, badge, editBtn, del);
+      }
       list.appendChild(item);
+    });
+  }
+
+  // Inline task title editing
+  function startEdit(taskId, titleEl, currentTitle) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentTitle;
+    input.className = 'form-input';
+    input.setAttribute('data-testid', 'task-edit-input');
+    input.style.cssText = 'flex:1;padding:.3rem .6rem;font-size:.9rem;height:auto;';
+
+    titleEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function commitEdit() {
+      const newTitle = input.value;
+      // BUG [LOW]: no validation — empty string is accepted and saved
+      TASKS.updateTitle(user.id, taskId, newTitle);
+      renderStats();
+      renderTasks();
+    }
+
+    input.addEventListener('blur', commitEdit);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter')  { input.blur(); }
+      if (e.key === 'Escape') { input.value = currentTitle; input.blur(); }
     });
   }
 
@@ -175,11 +267,29 @@ function initDashboard() {
     renderTasks();
   }
 
-  // Add task form
-  const addForm = document.querySelector('[data-testid="add-task-form"]');
-  const taskInput = document.querySelector('[data-testid="task-input"]');
-  const prioritySelect = document.querySelector('[data-testid="priority-select"]');
-  const taskError = document.querySelector('[data-testid="task-input-error"]');
+  // ── Search ──
+  const searchInput = document.querySelector('[data-testid="task-search"]');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      searchQuery = searchInput.value;
+      renderTasks();
+    });
+    const clearSearch = document.querySelector('[data-testid="clear-search"]');
+    if (clearSearch) {
+      clearSearch.addEventListener('click', () => {
+        searchInput.value = '';
+        searchQuery = '';
+        renderTasks();
+        searchInput.focus();
+      });
+    }
+  }
+
+  // ── Add task ──
+  const addForm     = document.querySelector('[data-testid="add-task-form"]');
+  const taskInput   = document.querySelector('[data-testid="task-input"]');
+  const prioritySel = document.querySelector('[data-testid="priority-select"]');
+  const taskError   = document.querySelector('[data-testid="task-input-error"]');
 
   if (addForm) {
     addForm.addEventListener('submit', e => {
@@ -193,11 +303,12 @@ function initDashboard() {
       }
       taskInput.classList.remove('error');
       if (taskError) taskError.classList.remove('visible');
-      const priority = prioritySelect ? prioritySelect.value : 'medium';
+      const priority = prioritySel ? prioritySel.value : 'medium';
       TASKS.add(user.id, title, priority);
       taskInput.value = '';
-      if (prioritySelect) prioritySelect.value = 'medium';
+      if (prioritySel) prioritySel.value = 'medium';
       AUTH.showToast('Task added!', 'success');
+      updatePageTitle();
       renderStats();
       renderTasks();
     });
@@ -212,7 +323,7 @@ function initDashboard() {
     }
   }
 
-  // Filter tabs
+  // ── Filter tabs ──
   document.querySelectorAll('[data-filter]').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('[data-filter]').forEach(t => t.classList.remove('active'));
@@ -222,11 +333,12 @@ function initDashboard() {
     });
   });
 
-  // Logout
+  // ── Logout ──
   document.querySelectorAll('[data-testid="logout-btn"]').forEach(btn => {
     btn.addEventListener('click', () => AUTH.logout());
   });
 
+  updatePageTitle();
   renderStats();
   renderTasks();
 }
