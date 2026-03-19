@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — TaskFlow</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar" data-testid="sidebar">
+      <a href="dashboard.html" class="sidebar-brand" data-testid="sidebar-brand">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px;flex-shrink:0;">
+          <rect width="32" height="32" rx="8" fill="currentColor"/>
+          <path d="M9 16.5l5 5 9-9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        TaskFlow
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="sidebar-link" data-testid="nav-dashboard">
+          <span class="icon">📋</span>
+          Dashboard
+        </a>
+        <a href="profile.html" class="sidebar-link active" data-testid="nav-profile">
+          <span class="icon">👤</span>
+          Profile
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="nav-user" style="padding:.5rem .875rem;margin-bottom:.75rem;">
+          <div class="avatar" data-user-avatar></div>
+          <div style="min-width:0;">
+            <p class="fw-600 text-sm" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" data-user-name></p>
+            <p class="text-xs text-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" data-user-email></p>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-full btn-sm" data-testid="logout-btn">
+          ↩ Log out
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── Main content ── -->
+    <main class="main-content">
+
+      <header class="page-header" data-testid="page-header">
+        <h1 class="page-title">Profile</h1>
+        <p class="page-subtitle">Manage your account information and security settings.</p>
+      </header>
+
+      <div class="page-body" style="max-width:680px;">
+
+        <!-- ── Account info display ── -->
+        <div class="card mb-3" data-testid="account-info-card">
+          <div class="card-body">
+            <div style="display:flex;align-items:center;gap:1.25rem;">
+              <div class="avatar" style="width:60px;height:60px;font-size:1.5rem;" data-user-avatar-lg></div>
+              <div>
+                <p class="fw-700" style="font-size:1.125rem;" data-testid="profile-display-name"></p>
+                <p class="text-muted text-sm" data-testid="profile-display-email"></p>
+                <p class="text-xs text-muted mt-1">Member since <span data-testid="profile-member-since"></span></p>
+              </div>
+            </div>
+            <hr class="divider" />
+            <div class="grid grid-3 gap-2">
+              <div class="stat-card" data-testid="profile-stat-total">
+                <div class="stat-value" id="ps-total">—</div>
+                <div class="stat-label">Total tasks</div>
+              </div>
+              <div class="stat-card" data-testid="profile-stat-active">
+                <div class="stat-value" id="ps-active">—</div>
+                <div class="stat-label">Active</div>
+              </div>
+              <div class="stat-card" data-testid="profile-stat-completed">
+                <div class="stat-value" id="ps-completed">—</div>
+                <div class="stat-label">Completed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Edit profile form ── -->
+        <div class="card mb-3" data-testid="edit-profile-card">
+          <div class="card-header">
+            <h3 style="font-size:1rem;margin:0;">Edit Profile</h3>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-success" id="profile-success" data-testid="profile-success-alert"></div>
+            <div class="alert alert-error" id="profile-error" data-testid="profile-error-alert"></div>
+
+            <form id="edit-profile-form" data-testid="edit-profile-form" novalidate>
+              <div class="form-group">
+                <label class="form-label" for="edit-name">Full name</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  id="edit-name"
+                  name="name"
+                  autocomplete="name"
+                  data-testid="edit-name-input"
+                />
+                <span class="field-error" id="edit-name-error" data-testid="edit-name-error"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="edit-email">Email address</label>
+                <input
+                  class="form-input"
+                  type="email"
+                  id="edit-email"
+                  name="email"
+                  autocomplete="email"
+                  data-testid="edit-email-input"
+                />
+                <span class="field-error" id="edit-email-error" data-testid="edit-email-error"></span>
+              </div>
+              <div class="flex justify-end">
+                <button type="submit" class="btn btn-primary" id="save-profile-btn" data-testid="save-profile-btn">
+                  Save changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ── Change password form ── -->
+        <div class="card" data-testid="change-password-card">
+          <div class="card-header">
+            <h3 style="font-size:1rem;margin:0;">Change Password</h3>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-success" id="pw-success" data-testid="password-success-alert"></div>
+            <div class="alert alert-error" id="pw-error" data-testid="password-error-alert"></div>
+
+            <form id="change-password-form" data-testid="change-password-form" novalidate>
+              <div class="form-group">
+                <label class="form-label" for="current-password">Current password</label>
+                <input
+                  class="form-input"
+                  type="password"
+                  id="current-password"
+                  name="current-password"
+                  placeholder="••••••••"
+                  autocomplete="current-password"
+                  data-testid="current-password-input"
+                />
+                <span class="field-error" id="current-password-error" data-testid="current-password-error"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="new-password">New password</label>
+                <input
+                  class="form-input"
+                  type="password"
+                  id="new-password"
+                  name="new-password"
+                  placeholder="At least 8 characters"
+                  autocomplete="new-password"
+                  data-testid="new-password-input"
+                />
+                <span class="field-error" id="new-password-error" data-testid="new-password-error"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="confirm-new-password">Confirm new password</label>
+                <input
+                  class="form-input"
+                  type="password"
+                  id="confirm-new-password"
+                  name="confirm-new-password"
+                  placeholder="Repeat new password"
+                  autocomplete="new-password"
+                  data-testid="confirm-new-password-input"
+                />
+                <span class="field-error" id="confirm-new-password-error" data-testid="confirm-new-password-error"></span>
+              </div>
+              <div class="flex justify-end">
+                <button type="submit" class="btn btn-primary" id="change-pw-btn" data-testid="change-password-btn">
+                  Update password
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      </div><!-- /.page-body -->
+    </main>
+
+  </div><!-- /.app-layout -->
+
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if (!AUTH.requireAuth()) { /* redirected */ }
+
+    const user = AUTH.getCurrentUser();
+
+    // Populate sidebar + header
+    document.querySelectorAll('[data-user-name]').forEach(el => { el.textContent = user.name; });
+    document.querySelectorAll('[data-user-email]').forEach(el => { el.textContent = user.email; });
+    document.querySelectorAll('[data-user-avatar]').forEach(el => { el.textContent = user.name[0].toUpperCase(); });
+
+    // Account info card
+    document.querySelector('[data-testid="profile-display-name"]').textContent = user.name;
+    document.querySelector('[data-testid="profile-display-email"]').textContent = user.email;
+
+    const largeAvatar = document.querySelector('[data-user-avatar-lg]');
+    if (largeAvatar) largeAvatar.textContent = user.name[0].toUpperCase();
+
+    const joinedDate = new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    document.querySelector('[data-testid="profile-member-since"]').textContent = joinedDate;
+
+    // Stats
+    const stats = TASKS.getStats(user.id);
+    document.getElementById('ps-total').textContent     = stats.total;
+    document.getElementById('ps-active').textContent    = stats.active;
+    document.getElementById('ps-completed').textContent = stats.completed;
+
+    // Pre-fill edit form
+    document.getElementById('edit-name').value  = user.name;
+    document.getElementById('edit-email').value = user.email;
+
+    // ── Field helpers ──
+    function showFieldError(id, errId, msg) {
+      document.getElementById(id).classList.add('error');
+      const el = document.getElementById(errId);
+      el.textContent = msg; el.classList.add('visible');
+    }
+    function clearFieldError(id, errId) {
+      document.getElementById(id).classList.remove('error');
+      document.getElementById(errId).classList.remove('visible');
+    }
+    function showAlert(id, type, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.className = `alert alert-${type} visible`;
+    }
+    function hideAlert(id) {
+      document.getElementById(id).classList.remove('visible');
+    }
+
+    // ── Edit profile form ──
+    document.getElementById('edit-profile-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      clearFieldError('edit-name', 'edit-name-error');
+      clearFieldError('edit-email', 'edit-email-error');
+      hideAlert('profile-success');
+      hideAlert('profile-error');
+
+      const name  = document.getElementById('edit-name').value.trim();
+      const email = document.getElementById('edit-email').value.trim();
+      let valid = true;
+
+      if (!name) {
+        showFieldError('edit-name', 'edit-name-error', 'Name is required.');
+        valid = false;
+      } else if (name.length < 2) {
+        showFieldError('edit-name', 'edit-name-error', 'Name must be at least 2 characters.');
+        valid = false;
+      }
+      if (!email) {
+        showFieldError('edit-email', 'edit-email-error', 'Email is required.');
+        valid = false;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showFieldError('edit-email', 'edit-email-error', 'Please enter a valid email address.');
+        valid = false;
+      }
+      if (!valid) return;
+
+      const btn = document.getElementById('save-profile-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Saving…';
+
+      setTimeout(() => {
+        const result = AUTH.updateProfile(user.id, { name, email });
+        if (result.success) {
+          // Update displayed values
+          document.querySelectorAll('[data-user-name]').forEach(el => { el.textContent = name; });
+          document.querySelectorAll('[data-user-email]').forEach(el => { el.textContent = email; });
+          document.querySelectorAll('[data-user-avatar]').forEach(el => { el.textContent = name[0].toUpperCase(); });
+          document.querySelector('[data-testid="profile-display-name"]').textContent = name;
+          document.querySelector('[data-testid="profile-display-email"]').textContent = email;
+          if (largeAvatar) largeAvatar.textContent = name[0].toUpperCase();
+          showAlert('profile-success', 'success', '✓ Profile updated successfully.');
+          AUTH.showToast('Profile updated!', 'success');
+        } else {
+          showAlert('profile-error', 'error', result.error);
+        }
+        btn.disabled = false;
+        btn.innerHTML = 'Save changes';
+      }, 400);
+    });
+
+    // Clear field errors on input
+    document.getElementById('edit-name').addEventListener('input',  () => clearFieldError('edit-name', 'edit-name-error'));
+    document.getElementById('edit-email').addEventListener('input', () => clearFieldError('edit-email', 'edit-email-error'));
+
+    // ── Change password form ──
+    document.getElementById('change-password-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      ['current-password', 'new-password', 'confirm-new-password'].forEach(f => {
+        clearFieldError(f, f + '-error');
+      });
+      hideAlert('pw-success');
+      hideAlert('pw-error');
+
+      const current  = document.getElementById('current-password').value;
+      const newPw    = document.getElementById('new-password').value;
+      const confirm  = document.getElementById('confirm-new-password').value;
+      let valid = true;
+
+      if (!current) {
+        showFieldError('current-password', 'current-password-error', 'Current password is required.');
+        valid = false;
+      }
+      if (!newPw) {
+        showFieldError('new-password', 'new-password-error', 'New password is required.');
+        valid = false;
+      } else if (newPw.length < 8) {
+        showFieldError('new-password', 'new-password-error', 'Password must be at least 8 characters.');
+        valid = false;
+      }
+      if (!confirm) {
+        showFieldError('confirm-new-password', 'confirm-new-password-error', 'Please confirm your new password.');
+        valid = false;
+      } else if (newPw && confirm !== newPw) {
+        showFieldError('confirm-new-password', 'confirm-new-password-error', 'Passwords do not match.');
+        valid = false;
+      }
+      if (!valid) return;
+
+      const btn = document.getElementById('change-pw-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Updating…';
+
+      setTimeout(() => {
+        const result = AUTH.changePassword(user.id, current, newPw);
+        if (result.success) {
+          document.getElementById('change-password-form').reset();
+          showAlert('pw-success', 'success', '✓ Password changed successfully.');
+          AUTH.showToast('Password updated!', 'success');
+        } else {
+          showAlert('pw-error', 'error', result.error);
+        }
+        btn.disabled = false;
+        btn.innerHTML = 'Update password';
+      }, 400);
+    });
+
+    ['current-password', 'new-password', 'confirm-new-password'].forEach(f => {
+      document.getElementById(f).addEventListener('input', () => clearFieldError(f, f + '-error'));
+    });
+
+    // Logout
+    document.querySelectorAll('[data-testid="logout-btn"]').forEach(btn => {
+      btn.addEventListener('click', () => AUTH.logout());
+    });
+  </script>
+</body>
+</html>

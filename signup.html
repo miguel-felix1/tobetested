@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign up — TaskFlow</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="auth-wrapper">
+
+    <!-- ── Left: Form panel ── -->
+    <div class="auth-panel" style="background:#fff;">
+      <div class="auth-panel-form">
+
+        <div class="auth-panel-brand">
+          <a href="index.html" class="navbar-brand" data-testid="auth-brand">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:28px;height:28px;">
+              <rect width="32" height="32" rx="8" fill="currentColor"/>
+              <path d="M9 16.5l5 5 9-9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            TaskFlow
+          </a>
+        </div>
+
+        <h1 class="auth-title">Create your account</h1>
+        <p class="auth-subtitle">Start managing tasks for free. No credit card required.</p>
+
+        <!-- Global alert -->
+        <div class="alert alert-error" id="signup-alert" data-testid="signup-alert" role="alert"></div>
+
+        <!-- Signup form -->
+        <form id="signup-form" data-testid="signup-form" novalidate>
+
+          <div class="form-group">
+            <label class="form-label" for="name">Full name</label>
+            <input
+              class="form-input"
+              type="text"
+              id="name"
+              name="name"
+              placeholder="Jane Smith"
+              autocomplete="name"
+              data-testid="name-input"
+            />
+            <span class="field-error" id="name-error" data-testid="name-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">Email address</label>
+            <input
+              class="form-input"
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              data-testid="email-input"
+            />
+            <span class="field-error" id="email-error" data-testid="email-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input
+              class="form-input"
+              type="password"
+              id="password"
+              name="password"
+              placeholder="At least 8 characters"
+              autocomplete="new-password"
+              data-testid="password-input"
+            />
+            <span class="field-error" id="password-error" data-testid="password-error"></span>
+            <!-- Password strength meter -->
+            <div class="password-strength" id="strength-indicator" data-testid="password-strength" style="display:none;">
+              <div class="strength-bar-track">
+                <div class="strength-bar-fill" id="strength-bar"></div>
+              </div>
+              <p class="strength-text" id="strength-text"></p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="confirm-password">Confirm password</label>
+            <input
+              class="form-input"
+              type="password"
+              id="confirm-password"
+              name="confirm-password"
+              placeholder="Repeat your password"
+              autocomplete="new-password"
+              data-testid="confirm-password-input"
+            />
+            <span class="field-error" id="confirm-password-error" data-testid="confirm-password-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-check" data-testid="terms-label">
+              <input type="checkbox" id="terms" name="terms" data-testid="terms-checkbox" />
+              I agree to the <a href="#" onclick="return false;">Terms of Service</a> and <a href="#" onclick="return false;">Privacy Policy</a>
+            </label>
+            <span class="field-error" id="terms-error" data-testid="terms-error"></span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full" id="signup-btn" data-testid="signup-btn">
+            Create account
+          </button>
+
+        </form>
+
+        <div class="auth-footer">
+          Already have an account? <a href="login.html" data-testid="login-link">Log in</a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Right: Illustration panel ── -->
+    <div class="auth-panel-illustration" data-testid="auth-illustration">
+      <h2>Start in seconds</h2>
+      <p>Create a free account and have your first task list ready in under a minute.</p>
+      <div class="illustration-features">
+        <div class="illustration-feature">
+          <div class="check">✓</div>
+          <span>Free forever — no hidden fees</span>
+        </div>
+        <div class="illustration-feature">
+          <div class="check">✓</div>
+          <span>Instant access after sign-up</span>
+        </div>
+        <div class="illustration-feature">
+          <div class="check">✓</div>
+          <span>Your data is private and secure</span>
+        </div>
+        <div class="illustration-feature">
+          <div class="check">✓</div>
+          <span>Update or delete your account anytime</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.auth-wrapper -->
+
+  <script src="auth.js"></script>
+  <script>
+    // Redirect if already logged in
+    AUTH.redirectIfAuth();
+
+    // ── Password strength ──
+    function measureStrength(pw) {
+      let score = 0;
+      if (pw.length >= 8)  score++;
+      if (pw.length >= 12) score++;
+      if (/[A-Z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^A-Za-z0-9]/.test(pw)) score++;
+      return score;
+    }
+
+    const strengthColors = ['', '#ef4444', '#f59e0b', '#f59e0b', '#10b981', '#10b981'];
+    const strengthLabels = ['', 'Very weak', 'Weak', 'Fair', 'Strong', 'Very strong'];
+
+    document.getElementById('password').addEventListener('input', function() {
+      const val = this.value;
+      const indicator = document.getElementById('strength-indicator');
+      const bar  = document.getElementById('strength-bar');
+      const text = document.getElementById('strength-text');
+
+      if (!val) { indicator.style.display = 'none'; return; }
+      indicator.style.display = 'block';
+      const score = measureStrength(val);
+      bar.style.width = (score / 5 * 100) + '%';
+      bar.style.background = strengthColors[score];
+      text.textContent = 'Password strength: ' + strengthLabels[score];
+      text.setAttribute('data-strength', strengthLabels[score].toLowerCase().replace(' ', '-'));
+    });
+
+    // ── Field helpers ──
+    function showFieldError(id, errId, msg) {
+      document.getElementById(id).classList.add('error');
+      const el = document.getElementById(errId);
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+    function clearFieldError(id, errId) {
+      document.getElementById(id).classList.remove('error');
+      document.getElementById(errId).classList.remove('visible');
+    }
+
+    // Clear on input
+    ['name', 'email', 'password', 'confirm-password'].forEach(f => {
+      document.getElementById(f).addEventListener('input', () => {
+        clearFieldError(f, f + '-error');
+        document.getElementById('signup-alert').classList.remove('visible');
+      });
+    });
+    document.getElementById('terms').addEventListener('change', () => {
+      clearFieldError('terms', 'terms-error');
+    });
+
+    // ── Form submit ──
+    document.getElementById('signup-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name      = document.getElementById('name').value.trim();
+      const email     = document.getElementById('email').value.trim();
+      const password  = document.getElementById('password').value;
+      const confirm   = document.getElementById('confirm-password').value;
+      const terms     = document.getElementById('terms').checked;
+      let valid = true;
+
+      // Reset all errors
+      ['name', 'email', 'password', 'confirm-password', 'terms'].forEach(f => {
+        clearFieldError(f, f + '-error');
+      });
+      document.getElementById('signup-alert').classList.remove('visible');
+
+      // Name
+      if (!name) {
+        showFieldError('name', 'name-error', 'Full name is required.');
+        valid = false;
+      } else if (name.length < 2) {
+        showFieldError('name', 'name-error', 'Name must be at least 2 characters.');
+        valid = false;
+      }
+
+      // Email
+      if (!email) {
+        showFieldError('email', 'email-error', 'Email is required.');
+        valid = false;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showFieldError('email', 'email-error', 'Please enter a valid email address.');
+        valid = false;
+      }
+
+      // Password
+      if (!password) {
+        showFieldError('password', 'password-error', 'Password is required.');
+        valid = false;
+      } else if (password.length < 8) {
+        showFieldError('password', 'password-error', 'Password must be at least 8 characters.');
+        valid = false;
+      }
+
+      // Confirm password
+      if (!confirm) {
+        showFieldError('confirm-password', 'confirm-password-error', 'Please confirm your password.');
+        valid = false;
+      } else if (password && confirm !== password) {
+        showFieldError('confirm-password', 'confirm-password-error', 'Passwords do not match.');
+        valid = false;
+      }
+
+      // Terms
+      if (!terms) {
+        showFieldError('terms', 'terms-error', 'You must accept the Terms of Service to continue.');
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      const btn = document.getElementById('signup-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Creating account…';
+
+      setTimeout(() => {
+        const result = AUTH.register(name, email, password);
+        if (result.success) {
+          window.location.href = 'dashboard.html';
+        } else {
+          const alert = document.getElementById('signup-alert');
+          alert.textContent = result.error;
+          alert.className = 'alert alert-error visible';
+          btn.disabled = false;
+          btn.innerHTML = 'Create account';
+        }
+      }, 500);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log in — TaskFlow</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="auth-wrapper">
+
+    <!-- ── Left: Form panel ── -->
+    <div class="auth-panel" style="background:#fff;">
+      <div class="auth-panel-form">
+
+        <div class="auth-panel-brand">
+          <a href="index.html" class="navbar-brand" data-testid="auth-brand">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:28px;height:28px;">
+              <rect width="32" height="32" rx="8" fill="currentColor"/>
+              <path d="M9 16.5l5 5 9-9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            TaskFlow
+          </a>
+        </div>
+
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-subtitle">Log in to your account to continue.</p>
+
+        <!-- Global error alert -->
+        <div class="alert alert-error" id="login-alert" data-testid="login-alert" role="alert"></div>
+
+        <!-- Login form -->
+        <form id="login-form" data-testid="login-form" novalidate>
+
+          <div class="form-group">
+            <label class="form-label" for="email">Email address</label>
+            <input
+              class="form-input"
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              data-testid="email-input"
+            />
+            <span class="field-error" id="email-error" data-testid="email-error"></span>
+          </div>
+
+          <div class="form-group">
+            <div class="flex justify-between items-center mb-1">
+              <label class="form-label" for="password" style="margin-bottom:0;">Password</label>
+              <a href="forgot-password.html" class="text-sm" data-testid="forgot-password-link">Forgot password?</a>
+            </div>
+            <input
+              class="form-input"
+              type="password"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              data-testid="password-input"
+            />
+            <span class="field-error" id="password-error" data-testid="password-error"></span>
+          </div>
+
+          <div class="form-group flex items-center" style="gap:.625rem;">
+            <label class="form-check">
+              <input type="checkbox" id="remember" name="remember" data-testid="remember-checkbox" />
+              Keep me logged in
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full" id="login-btn" data-testid="login-btn">
+            Log in
+          </button>
+
+        </form>
+
+        <div class="auth-divider">or</div>
+
+        <!-- Demo quick-fill -->
+        <button class="btn btn-ghost btn-full" id="demo-fill-btn" data-testid="demo-fill-btn" type="button">
+          Fill demo credentials
+        </button>
+
+        <div class="auth-footer">
+          Don't have an account? <a href="signup.html" data-testid="signup-link">Sign up for free</a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Right: Illustration panel ── -->
+    <div class="auth-panel-illustration" data-testid="auth-illustration">
+      <h2>Everything in one place</h2>
+      <p>TaskFlow helps you stay focused, organised, and productive — every single day.</p>
+      <div class="illustration-features">
+        <div class="illustration-feature">
+          <div class="check">✓</div>
+          <span>Create and prioritise tasks instantly</span>
+        </div>
+        <div class="illustration-feature">
+          <div class="check">✓</div>
+          <span>Track progress with at-a-glance stats</span>
+        </div>
+        <div class="illustration-feature">
+          <div class="check">✓</div>
+          <span>Manage your profile and preferences</span>
+        </div>
+        <div class="illustration-feature">
+          <div class="check">✓</div>
+          <span>Secure, private, always available</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.auth-wrapper -->
+
+  <script src="auth.js"></script>
+  <script>
+    // Redirect if already logged in
+    AUTH.redirectIfAuth();
+
+    // Pre-fill from URL param (e.g. after signup)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('email')) {
+      document.getElementById('email').value = params.get('email');
+    }
+
+    // Show success message from signup redirect
+    if (params.get('registered') === '1') {
+      const alert = document.getElementById('login-alert');
+      alert.textContent = '✓ Account created! Please log in to continue.';
+      alert.className = 'alert alert-success visible';
+    }
+
+    // ── Validation helpers ──
+    function showFieldError(fieldId, errorId, message) {
+      const field = document.getElementById(fieldId);
+      const error = document.getElementById(errorId);
+      field.classList.add('error');
+      error.textContent = message;
+      error.classList.add('visible');
+    }
+
+    function clearFieldError(fieldId, errorId) {
+      const field = document.getElementById(fieldId);
+      const error = document.getElementById(errorId);
+      field.classList.remove('error');
+      error.classList.remove('visible');
+    }
+
+    function clearAll() {
+      clearFieldError('email', 'email-error');
+      clearFieldError('password', 'password-error');
+      const alert = document.getElementById('login-alert');
+      if (!alert.classList.contains('alert-success')) {
+        alert.classList.remove('visible');
+        alert.textContent = '';
+      }
+    }
+
+    // Clear errors on input
+    document.getElementById('email').addEventListener('input', () => clearFieldError('email', 'email-error'));
+    document.getElementById('password').addEventListener('input', () => clearFieldError('password', 'password-error'));
+
+    // Demo fill button
+    document.getElementById('demo-fill-btn').addEventListener('click', () => {
+      document.getElementById('email').value = 'demo@taskflow.app';
+      document.getElementById('password').value = 'Demo1234!';
+      clearAll();
+    });
+
+    // Form submit
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      clearAll();
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const remember = document.getElementById('remember').checked;
+      let valid = true;
+
+      if (!email) {
+        showFieldError('email', 'email-error', 'Email is required.');
+        valid = false;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showFieldError('email', 'email-error', 'Please enter a valid email address.');
+        valid = false;
+      }
+
+      if (!password) {
+        showFieldError('password', 'password-error', 'Password is required.');
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      // Disable button and show spinner
+      const btn = document.getElementById('login-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Logging in…';
+
+      // Simulate slight delay for realistic feel
+      setTimeout(() => {
+        const result = AUTH.login(email, password, remember);
+        if (result.success) {
+          const redirectTo = params.get('redirect');
+          window.location.href = redirectTo && redirectTo !== '/' ? redirectTo : 'dashboard.html';
+        } else {
+          const alert = document.getElementById('login-alert');
+          alert.textContent = result.error;
+          alert.className = 'alert alert-error visible';
+          btn.disabled = false;
+          btn.innerHTML = 'Log in';
+          document.getElementById('password').focus();
+        }
+      }, 400);
+    });
+  </script>
+</body>
+</html>
