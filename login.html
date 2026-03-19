@@ -206,8 +206,7 @@
       setTimeout(() => {
         const result = AUTH.login(email, password, remember);
         if (result.success) {
-          const redirectTo = params.get('redirect');
-          window.location.href = redirectTo && redirectTo !== '/' ? redirectTo : 'dashboard.html';
+          window.location.href = AUTH.safePostLoginRedirect(params.get('redirect'));
         } else {
           const alert = document.getElementById('login-alert');
           alert.textContent = result.error;

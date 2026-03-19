@@ -100,6 +100,23 @@ const AUTH = (() => {
     return { success: true };
   }
 
+  /** Only same-origin targets; blocks open redirects (external URLs, //, javascript:, etc.). */
+  function safePostLoginRedirect(raw) {
+    const fallback = 'dashboard.html';
+    if (raw == null || raw === '') return fallback;
+    const s = String(raw).trim();
+    if (s === '/' || s === '') return fallback;
+    try {
+      const url = new URL(s, window.location.href);
+      if (url.origin !== window.location.origin) return fallback;
+      const path = url.pathname + url.search + url.hash;
+      if (path === '/' || path === '') return fallback;
+      return path;
+    } catch {
+      return fallback;
+    }
+  }
+
   function requireAuth() {
     if (!getCurrentUser()) {
       const redirect = encodeURIComponent(window.location.pathname + window.location.search);
@@ -141,7 +158,13 @@ const AUTH = (() => {
     const toast = document.createElement('div');
     toast.className = 'toast' + (type !== 'default' ? ' ' + type : '');
     const icons = { success: '✓', error: '✕', default: 'ℹ' };
-    toast.innerHTML = `<span>${icons[type] || icons.default}</span> ${message}`;
+    const iconSpan = document.createElement('span');
+    iconSpan.textContent = icons[type] || icons.default;
+    toast.appendChild(iconSpan);
+    toast.appendChild(document.createTextNode(' '));
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = message;
+    toast.appendChild(msgSpan);
     container.appendChild(toast);
     setTimeout(() => {
       toast.style.opacity = '0';
@@ -153,5 +176,5 @@ const AUTH = (() => {
 
   seedDemo();
 
-  return { getCurrentUser, setCurrentUser, logout, register, login, updateProfile, changePassword, requireAuth, redirectIfAuth, showToast };
+  return { getCurrentUser, setCurrentUser, logout, register, login, updateProfile, changePassword, requireAuth, redirectIfAuth, safePostLoginRedirect, showToast };
 })();

@@ -90,11 +90,12 @@
                     maxlength="200"
                     autocomplete="off"
                     data-testid="task-input"
+                    aria-label="Task title"
                   />
                   <span class="field-error" id="task-input-error" data-testid="task-input-error"></span>
                 </div>
                 <div>
-                  <select class="form-input" id="priority-select" data-testid="priority-select" style="width:auto;">
+                  <select class="form-input" id="priority-select" data-testid="priority-select" style="width:auto;" aria-label="Task priority">
                     <option value="low">🟢 Low</option>
                     <option value="medium" selected>🟡 Medium</option>
                     <option value="high">🔴 High</option>
