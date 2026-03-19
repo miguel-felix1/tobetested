@@ -456,6 +456,31 @@ h3 { font-size: 1.25rem; }
   .page-body { padding: 1.25rem; }
 }
 
+/* ── Due date & overdue task styles ── */
+.task-meta-label {
+  font-size: .78rem;
+  font-weight: 600;
+  padding: .2rem .6rem;
+  border-radius: 99px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.due-upcoming { background: #dbeafe; color: #1d4ed8; }
+.due-overdue  { background: var(--danger-light); color: #b91c1c; }
+.task-overdue { border-left: 3px solid var(--danger); }
+
+/* ── Dark mode — BUG: only sidebar has dark styles; main content is untouched ── */
+.sidebar.dark { background: #1e293b; border-color: #334155; }
+.sidebar.dark .sidebar-brand { color: #818cf8; }
+.sidebar.dark .sidebar-link  { color: #94a3b8; }
+.sidebar.dark .sidebar-link:hover { background: #334155; color: #e2e8f0; }
+.sidebar.dark .sidebar-link.active { background: #312e81; color: #a5b4fc; }
+.sidebar.dark .sidebar-footer { border-color: #334155; }
+.sidebar.dark .nav-user p { color: #e2e8f0; }
+.sidebar.dark .btn-ghost { color: #94a3b8; border-color: #475569; }
+.sidebar.dark .btn-ghost:hover { background: #334155; color: #e2e8f0; }
+/* Missing: body.dark, .main-content.dark, etc. — intentionally incomplete */
+
 /* ── Spinner ── */
 .spinner {
   width: 18px; height: 18px;

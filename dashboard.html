@@ -11,7 +11,7 @@
   <div class="app-layout">
 
     <!-- ── Sidebar ── -->
-    <aside class="sidebar" data-testid="sidebar">
+    <aside class="sidebar" id="sidebar" data-testid="sidebar">
       <a href="dashboard.html" class="sidebar-brand" data-testid="sidebar-brand">
         <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px;flex-shrink:0;">
           <rect width="32" height="32" rx="8" fill="currentColor"/>
@@ -30,9 +30,23 @@
           <span class="icon">👤</span>
           Profile
         </a>
+        <!-- Overdue tasks indicator in sidebar -->
+        <div class="sidebar-link" style="cursor:default;" data-testid="sidebar-overdue-row">
+          <span class="icon">⚠️</span>
+          Overdue
+          <span class="badge" id="overdue-badge" data-testid="overdue-badge" style="margin-left:auto;background:#ef4444;color:#fff;display:none;">0</span>
+        </div>
       </nav>
 
       <div class="sidebar-footer">
+        <!-- Dark mode toggle -->
+        <button
+          class="btn btn-ghost btn-full btn-sm mb-1"
+          id="dark-mode-btn"
+          data-testid="dark-mode-btn"
+          type="button"
+        >🌙 Dark mode</button>
+
         <div class="nav-user" style="padding:.5rem .875rem;margin-bottom:.75rem;">
           <div class="avatar" data-user-avatar></div>
           <div style="min-width:0;">
@@ -57,7 +71,7 @@
       <div class="page-body">
 
         <!-- Stats row -->
-        <div class="grid grid-3 gap-2 mb-3" data-testid="stats-grid">
+        <div class="grid grid-4 gap-2 mb-3" data-testid="stats-grid">
           <div class="stat-card" data-testid="stat-total">
             <div class="stat-icon">📋</div>
             <div class="stat-value" data-stat="total">0</div>
@@ -72,6 +86,11 @@
             <div class="stat-icon">✅</div>
             <div class="stat-value" data-stat="completed">0</div>
             <div class="stat-label">Completed</div>
+          </div>
+          <div class="stat-card" data-testid="stat-overdue">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-value" id="stat-overdue-value" data-testid="stat-overdue-value">0</div>
+            <div class="stat-label">Overdue</div>
           </div>
         </div>
 
@@ -101,6 +120,16 @@
                     <option value="high">🔴 High</option>
                   </select>
                 </div>
+                <div>
+                  <input
+                    class="form-input"
+                    type="date"
+                    id="due-date-input"
+                    data-testid="due-date-input"
+                    title="Due date (optional)"
+                    style="width:auto;"
+                  />
+                </div>
                 <button type="submit" class="btn btn-primary" data-testid="add-task-btn">
                   + Add task
                 </button>
@@ -111,36 +140,54 @@
 
         <!-- Task list card -->
         <div class="card" data-testid="tasks-card">
-          <div class="card-header flex justify-between items-center" style="padding-bottom:.75rem;">
-            <h3 style="font-size:1rem;margin:0;">My Tasks</h3>
-            <!-- Search bar -->
-            <div style="display:flex;align-items:center;gap:.5rem;position:relative;">
-              <input
-                class="form-input"
-                type="search"
-                placeholder="Search tasks…"
-                data-testid="task-search"
-                style="padding:.4rem .75rem;font-size:.875rem;width:200px;"
-                autocomplete="off"
-              />
-              <button
-                class="btn btn-ghost btn-sm"
-                data-testid="clear-search"
-                type="button"
-                style="padding:.4rem .625rem;font-size:.8rem;"
-              >Clear</button>
+          <div class="card-header" style="padding-bottom:.75rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+              <h3 style="font-size:1rem;margin:0;">My Tasks</h3>
+              <!-- Search bar -->
+              <div style="display:flex;align-items:center;gap:.5rem;">
+                <input
+                  class="form-input"
+                  type="search"
+                  placeholder="Search tasks…"
+                  data-testid="task-search"
+                  style="padding:.4rem .75rem;font-size:.875rem;width:200px;"
+                  autocomplete="off"
+                />
+                <button class="btn btn-ghost btn-sm" data-testid="clear-search" type="button" style="padding:.4rem .625rem;font-size:.8rem;">Clear</button>
+              </div>
             </div>
-          </div>
-          <div style="padding:.75rem 1.75rem 0;">
-            <!-- Filter tabs -->
-            <div class="tabs" data-testid="filter-tabs">
-              <button class="tab active" data-filter="all" data-testid="filter-all">All</button>
-              <button class="tab" data-filter="active" data-testid="filter-active">Active</button>
-              <button class="tab" data-filter="completed" data-testid="filter-completed">Completed</button>
+
+            <!-- Toolbar: filters + sort + bulk actions -->
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-top:.875rem;">
+              <!-- Filter tabs -->
+              <div class="tabs" data-testid="filter-tabs" style="margin-bottom:0;border-bottom:none;">
+                <button class="tab active" data-filter="all" data-testid="filter-all">All</button>
+                <button class="tab" data-filter="active" data-testid="filter-active">Active</button>
+                <button class="tab" data-filter="completed" data-testid="filter-completed">Completed</button>
+                <button class="tab" data-filter="overdue" data-testid="filter-overdue">Overdue</button>
+              </div>
+
+              <!-- Sort + bulk actions -->
+              <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                <select class="form-input" id="sort-select" data-testid="sort-select" style="padding:.35rem .75rem;font-size:.875rem;width:auto;">
+                  <option value="default">Sort: Default</option>
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="priority">By priority</option>
+                  <option value="az">A → Z</option>
+                  <option value="za">Z → A</option>
+                </select>
+                <button class="btn btn-secondary btn-sm" id="mark-all-btn" data-testid="mark-all-btn" type="button">
+                  ✓ Mark all complete
+                </button>
+                <button class="btn btn-ghost btn-sm" id="clear-completed-btn" data-testid="clear-completed-btn" type="button" style="color:var(--danger);border-color:var(--danger);">
+                  🗑 Clear completed
+                </button>
+              </div>
             </div>
           </div>
 
-          <div style="padding:0 1.75rem 1.75rem;">
+          <div style="padding:0 1.75rem 1.75rem;margin-top:1rem;">
             <!-- Task list -->
             <div id="task-list" data-testid="task-list" style="display:flex;flex-direction:column;gap:.625rem;"></div>
 
