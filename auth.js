@@ -79,11 +79,21 @@ const AUTH = (() => {
     const users = getUsers();
     const idx = users.findIndex(u => u.id === id);
     if (idx === -1) return { success: false, error: 'User not found.' };
-    const allowedFields = ['name', 'email'];
-    allowedFields.forEach(f => { if (updates[f] !== undefined) users[idx][f] = updates[f]; });
+
+    if (updates.name !== undefined) {
+      users[idx].name = String(updates.name).trim();
+    }
+    if (updates.email !== undefined) {
+      const newEmail = String(updates.email).trim().toLowerCase();
+      if (users.some(u => u.id !== id && u.email.toLowerCase() === newEmail)) {
+        return { success: false, error: 'An account with this email already exists.' };
+      }
+      users[idx].email = newEmail;
+    }
+
     saveUsers(users);
     const current = getCurrentUser();
-    const updated = { ...current, ...updates };
+    const updated = { ...current, name: users[idx].name, email: users[idx].email };
     const inLocalStorage = !!localStorage.getItem(REMEMBER_KEY);
     setCurrentUser(updated, inLocalStorage);
     return { success: true, user: updated };
