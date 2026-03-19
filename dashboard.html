@@ -80,8 +80,9 @@
           <div class="card-body">
             <h3 class="mb-2" style="font-size:1rem;">Add a new task</h3>
             <form id="add-task-form" data-testid="add-task-form">
-              <div style="display:flex;gap:.75rem;align-items:flex-start;flex-wrap:wrap;">
+              <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap;">
                 <div style="flex:1;min-width:200px;">
+                  <label class="form-label" for="task-input">Task title</label>
                   <input
                     class="form-input"
                     type="text"
@@ -90,12 +91,12 @@
                     maxlength="200"
                     autocomplete="off"
                     data-testid="task-input"
-                    aria-label="Task title"
                   />
                   <span class="field-error" id="task-input-error" data-testid="task-input-error"></span>
                 </div>
                 <div>
-                  <select class="form-input" id="priority-select" data-testid="priority-select" style="width:auto;" aria-label="Task priority">
+                  <label class="form-label" for="priority-select">Priority</label>
+                  <select class="form-input" id="priority-select" data-testid="priority-select" style="width:auto;">
                     <option value="low">🟢 Low</option>
                     <option value="medium" selected>🟡 Medium</option>
                     <option value="high">🔴 High</option>
