@@ -1,86 +1,141 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-
-const DEMO_EMAIL = 'demo@taskflow.app';
-const DEMO_PASSWORD = 'Demo1234!';
+const { LoginPage } = require('./pages/LoginPage');
+const { SignupPage } = require('./pages/SignupPage');
+const { ProfilePage } = require('./pages/ProfilePage');
+const { DEMO_EMAIL, DEMO_PASSWORD } = require('./constants');
 
 test.describe('Login', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/login.html');
+    const login = new LoginPage(page);
+    await login.goto();
   });
 
   test('shows login form with email and password fields', async ({ page }) => {
-    await expect(page.getByTestId('login-form')).toBeVisible();
-    await expect(page.getByTestId('email-input')).toBeVisible();
-    await expect(page.getByTestId('password-input')).toBeVisible();
-    await expect(page.getByTestId('login-btn')).toBeVisible();
+    const login = new LoginPage(page);
+    await expect(login.loginForm).toBeVisible();
+    await expect(login.emailInput).toBeVisible();
+    await expect(login.passwordInput).toBeVisible();
+    await expect(login.loginButton).toBeVisible();
   });
 
   test('successful login with demo credentials redirects to dashboard', async ({ page }) => {
-    await page.getByTestId('email-input').fill(DEMO_EMAIL);
-    await page.getByTestId('password-input').fill(DEMO_PASSWORD);
-    await page.getByTestId('login-btn').click();
-    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
-    await expect(page.getByTestId('sidebar')).toBeVisible();
-    await expect(page.getByTestId('page-header')).toContainText('Dashboard');
+    const login = new LoginPage(page);
+    await login.fillCredentials(DEMO_EMAIL, DEMO_PASSWORD);
+    await login.submit();
+    await login.expectAuthenticatedOnDashboard();
+    await expect(login.pageHeader).toContainText('Dashboard');
   });
 
   test('invalid email or password shows error and stays on login page', async ({ page }) => {
-    await page.getByTestId('email-input').fill('wrong@example.com');
-    await page.getByTestId('password-input').fill('WrongPass123!');
-    await page.getByTestId('login-btn').click();
-    const alert = page.getByTestId('login-alert');
-    await expect(alert).toContainText(/invalid|password/i);
+    const login = new LoginPage(page);
+    await login.fillCredentials('wrong@example.com', 'WrongPass123!');
+    await login.submit();
+    await expect(login.loginAlert).toContainText(/invalid|password/i);
     await expect(page).toHaveURL(/\/login/);
   });
 
   test('empty email shows validation error', async ({ page }) => {
-    await page.getByTestId('password-input').fill(DEMO_PASSWORD);
-    await page.getByTestId('login-btn').click();
-    await expect(page.getByTestId('email-error')).toBeVisible();
-    await expect(page.getByTestId('email-error')).toContainText(/required|valid/i);
+    const login = new LoginPage(page);
+    await login.passwordInput.fill(DEMO_PASSWORD);
+    await login.submit();
+    await expect(login.emailError).toBeVisible();
+    await expect(login.emailError).toContainText(/required|valid/i);
   });
 
   test('empty password shows validation error', async ({ page }) => {
-    await page.getByTestId('email-input').fill(DEMO_EMAIL);
-    await page.getByTestId('login-btn').click();
-    await expect(page.getByTestId('password-error')).toBeVisible();
-    await expect(page.getByTestId('password-error')).toContainText(/required/i);
+    const login = new LoginPage(page);
+    await login.emailInput.fill(DEMO_EMAIL);
+    await login.submit();
+    await expect(login.passwordError).toBeVisible();
+    await expect(login.passwordError).toContainText(/required/i);
   });
 
   test('demo fill button pre-fills credentials', async ({ page }) => {
-    await page.getByTestId('demo-fill-btn').click();
-    await expect(page.getByTestId('email-input')).toHaveValue(DEMO_EMAIL);
-    await expect(page.getByTestId('password-input')).toHaveValue(DEMO_PASSWORD);
+    const login = new LoginPage(page);
+    await login.clickDemoFill();
+    await expect(login.emailInput).toHaveValue(DEMO_EMAIL);
+    await expect(login.passwordInput).toHaveValue(DEMO_PASSWORD);
+  });
+
+  test('successful login honours redirect query to profile', async ({ page }) => {
+    const login = new LoginPage(page);
+    const profile = new ProfilePage(page);
+    await login.gotoFromProtectedPageIntercept();
+    await login.fillCredentials(DEMO_EMAIL, DEMO_PASSWORD);
+    await login.submit();
+    await page.waitForURL(/\/profile/, { timeout: 10000 });
+    await expect(profile.shell.pageHeader).toContainText('Profile');
+    await expect(profile.accountInfoCard).toBeVisible();
   });
 });
 
 test.describe('Signup and duplicate email', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/signup.html');
+    const signup = new SignupPage(page);
+    await signup.goto();
   });
 
   test('signup with existing demo email shows duplicate error', async ({ page }) => {
-    await page.getByTestId('name-input').fill('Another User');
-    await page.getByTestId('email-input').fill(DEMO_EMAIL);
-    await page.getByTestId('password-input').fill('NewPass123!');
-    await page.getByTestId('confirm-password-input').fill('NewPass123!');
-    await page.getByTestId('terms-checkbox').check();
-    await page.getByTestId('signup-btn').click();
-    const alert = page.getByTestId('signup-alert');
-    await expect(alert).toContainText(/already exists|email/i);
+    const signup = new SignupPage(page);
+    await signup.fillSignupForm({
+      name: 'Another User',
+      email: DEMO_EMAIL,
+      password: 'NewPass123!',
+      confirmPassword: 'NewPass123!',
+    });
+    await signup.acceptTerms();
+    await signup.submitSignup();
+    await expect(signup.signupAlert).toContainText(/already exists|email/i);
     await expect(page).toHaveURL(/\/signup/);
   });
 
   test('successful signup with new email redirects to dashboard', async ({ page }) => {
+    const signup = new SignupPage(page);
     const uniqueEmail = `test-${Date.now()}@example.com`;
-    await page.getByTestId('name-input').fill('Test User');
-    await page.getByTestId('email-input').fill(uniqueEmail);
-    await page.getByTestId('password-input').fill('TestPass123!');
-    await page.getByTestId('confirm-password-input').fill('TestPass123!');
-    await page.getByTestId('terms-checkbox').check();
-    await page.getByTestId('signup-btn').click();
-    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
-    await expect(page.getByTestId('sidebar')).toBeVisible();
+    await signup.registerNewUser('Test User', uniqueEmail, 'TestPass123!');
+    const login = new LoginPage(page);
+    await expect(login.sidebar).toBeVisible();
+  });
+
+  test('signup without accepting terms shows validation error', async ({ page }) => {
+    const signup = new SignupPage(page);
+    await signup.fillSignupForm({
+      name: 'Terms Tester',
+      email: `terms-${Date.now()}@example.com`,
+      password: 'LongPass1!',
+      confirmPassword: 'LongPass1!',
+    });
+    await signup.submitSignup();
+    await expect(signup.termsError).toContainText(/terms/i);
+    await expect(page).toHaveURL(/\/signup/);
+  });
+
+  test('signup with mismatched passwords shows confirm validation error', async ({ page }) => {
+    const signup = new SignupPage(page);
+    await signup.fillSignupForm({
+      name: 'Mismatch User',
+      email: `mismatch-${Date.now()}@example.com`,
+      password: 'FirstPass123!',
+      confirmPassword: 'SecondPass123!',
+    });
+    await signup.acceptTerms();
+    await signup.submitSignup();
+    await expect(signup.confirmPasswordError).toContainText(/do not match/i);
+    await expect(page).toHaveURL(/\/signup/);
+  });
+
+  test('signup with password shorter than eight characters shows validation error', async ({ page }) => {
+    const signup = new SignupPage(page);
+    await signup.fillSignupForm({
+      name: 'Short Pass User',
+      email: `shortpw-${Date.now()}@example.com`,
+      password: 'short',
+      confirmPassword: 'short',
+    });
+    await signup.acceptTerms();
+    await signup.submitSignup();
+    await expect(signup.passwordError).toContainText(/8 characters/i);
+    await expect(page).toHaveURL(/\/signup/);
   });
 });
